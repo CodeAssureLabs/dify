@@ -70,7 +70,7 @@ class AnnotationSettingUpdatePayload(BaseModel):
 class AnnotationListQuery(BaseModel):
     page: int = Field(default=1, ge=1, description="Page number")
     limit: int = Field(default=20, ge=1, description="Page size")
-    keyword: str = Field(default="", description="Search keyword")
+    search: str = Field(default="", description="Text matched against annotation question and answer")
 
 
 class CreateAnnotationPayload(BaseModel):
@@ -294,10 +294,10 @@ class AnnotationApi(Resource):
         args = AnnotationListQuery.model_validate(request.args.to_dict(flat=True))
         page = args.page
         limit = args.limit
-        keyword = args.keyword
+        search = args.search
 
         annotation_list, total = AppAnnotationService.get_annotation_list_by_app_id(
-            str(app_id), page, limit, keyword, session
+            str(app_id), page, limit, search, session
         )
         annotation_models = TypeAdapter(list[Annotation]).validate_python(annotation_list, from_attributes=True)
         return AnnotationList(

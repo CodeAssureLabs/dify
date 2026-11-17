@@ -45,7 +45,7 @@ def test_annotation_list_query_defaults():
     query = annotation_module.AnnotationListQuery()
     assert query.page == 1
     assert query.limit == 20
-    assert query.keyword == ""
+    assert query.search == ""
 
 
 def test_annotation_list_query_custom_page():
@@ -55,10 +55,10 @@ def test_annotation_list_query_custom_page():
     assert query.limit == 50
 
 
-def test_annotation_list_query_with_keyword():
-    """Test AnnotationListQuery with keyword."""
-    query = annotation_module.AnnotationListQuery(keyword="test")
-    assert query.keyword == "test"
+def test_annotation_list_query_with_search():
+    """Test AnnotationListQuery with search text."""
+    query = annotation_module.AnnotationListQuery(search="test")
+    assert query.search == "test"
 
 
 def test_create_annotation_payload_with_message_id():
