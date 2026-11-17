@@ -27,8 +27,6 @@ from extensions.ext_redis import redis_client
 from fields.annotation_fields import (
     Annotation,
     AnnotationExportList,
-    AnnotationHitHistory,
-    AnnotationHitHistoryList,
     AnnotationJobStatusDetailResponse,
     AnnotationJobStatusResponse,
     AnnotationList,
@@ -102,11 +100,6 @@ class AnnotationReplyStatusQuery(BaseModel):
     action: Literal["enable", "disable"]
 
 
-class AnnotationHitHistoryListQuery(BaseModel):
-    page: int = Field(default=1, ge=1, description="Page number")
-    limit: int = Field(default=20, ge=1, description="Page size")
-
-
 class AnnotationFilePayload(BaseModel):
     message_id: str = Field(..., description="Message ID")
 
@@ -140,15 +133,12 @@ register_schema_models(
     Annotation,
     AnnotationList,
     AnnotationExportList,
-    AnnotationHitHistory,
-    AnnotationHitHistoryList,
     AnnotationReplyPayload,
     AnnotationSettingUpdatePayload,
     AnnotationListQuery,
     CreateAnnotationPayload,
     UpdateAnnotationPayload,
     AnnotationReplyStatusQuery,
-    AnnotationHitHistoryListQuery,
     AnnotationFilePayload,
 )
 register_response_schema_models(
@@ -156,8 +146,6 @@ register_response_schema_models(
     Annotation,
     AnnotationList,
     AnnotationExportList,
-    AnnotationHitHistory,
-    AnnotationHitHistoryList,
     AnnotationJobStatusResponse,
     AnnotationJobStatusDetailResponse,
     AnnotationSettingEmbeddingModelResponse,
@@ -523,39 +511,3 @@ class AnnotationBatchImportStatusApi(Resource):
             job_id=str(job_id), job_status=job_status, error_msg=error_msg
         ).model_dump(mode="json"), 200
 
-
-@console_ns.route("/apps/<uuid:app_id>/annotations/<uuid:annotation_id>/hit-histories")
-class AnnotationHitHistoryListApi(Resource):
-    @console_ns.doc("list_annotation_hit_histories")
-    @console_ns.doc(description="Get hit histories for an annotation")
-    @console_ns.doc(params={"app_id": "Application ID", "annotation_id": "Annotation ID"})
-    @console_ns.doc(params=query_params_from_model(AnnotationHitHistoryListQuery))
-    @console_ns.response(
-        200,
-        "Hit histories retrieved successfully",
-        console_ns.models[AnnotationHitHistoryList.__name__],
-    )
-    @console_ns.response(403, "Insufficient permissions")
-    @setup_required
-    @login_required
-    @account_initialization_required
-    @edit_permission_required
-    @rbac_permission_required(RBACResourceScope.APP, RBACPermission.APP_VIEW_LAYOUT)
-    @with_session(write=False)
-    def get(self, session: Session, app_id: UUID, annotation_id: UUID):
-        page = request.args.get("page", default=1, type=int)
-        limit = request.args.get("limit", default=20, type=int)
-        app_ref = _get_app_ref(session, str(app_id))
-        annotation_ref = AppRefService.create_annotation_ref(app_ref, str(annotation_id))
-        annotation_hit_history_list, total = AppAnnotationService.get_annotation_hit_histories(
-            annotation_ref,
-            page,
-            limit,
-            session,
-        )
-        history_models = TypeAdapter(list[AnnotationHitHistory]).validate_python(
-            annotation_hit_history_list, from_attributes=True
-        )
-        return AnnotationHitHistoryList(
-            data=history_models, has_more=len(annotation_hit_history_list) == limit, limit=limit, total=total, page=page
-        ).model_dump(mode="json")
