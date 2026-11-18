@@ -81,7 +81,7 @@ def batch_import_annotations_task(job_id: str, content_list: list[dict], app_id:
                     vector.create(documents, duplicate_check=True)
 
                 session.commit()
-                redis_client.setex(indexing_cache_key, 600, "completed")
+                redis_client.setex(indexing_cache_key, 600, "succeeded")
                 end_at = time.perf_counter()
                 logger.info(
                     click.style(
