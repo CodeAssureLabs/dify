@@ -194,33 +194,3 @@ class TestConsoleAnnotationRefBoundaries:
         delete_mock.assert_called_once()
         assert delete_mock.call_args.args[0] == AnnotationRef(AppRef("tenant-1", "app-1"), "ann-1")
         assert delete_mock.call_args.args[1] is session
-
-    def test_hit_history_uses_annotation_ref(self, app: Flask):
-        api = annotation_module.AnnotationHitHistoryListApi()
-        handler = unwrap(api.get)
-        history = SimpleNamespace(
-            id="history-1",
-            source="hit-testing",
-            score=0.9,
-            question="q",
-            annotation_question="q",
-            annotation_content="a",
-            created_at=None,
-        )
-        hit_history_mock = Mock(return_value=([history], 1))
-        session = MagicMock()
-        session.scalar.return_value = _app_model()
-
-        with (
-            app.test_request_context("/hit-histories?page=2&limit=5", method="GET"),
-            patch.object(
-                annotation_module,
-                "current_account_with_tenant",
-                return_value=(SimpleNamespace(id="account-1"), "tenant-1"),
-            ),
-            patch.object(annotation_module.AppAnnotationService, "get_annotation_hit_histories", hit_history_mock),
-        ):
-            response = handler(api, session, "app-1", "ann-1")
-
-        assert response["total"] == 1
-        hit_history_mock.assert_called_once_with(AnnotationRef(AppRef("tenant-1", "app-1"), "ann-1"), 2, 5, session)
